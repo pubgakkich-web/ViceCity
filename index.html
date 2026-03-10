@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VICE CITY || KM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ===============================================
+           АНИМАЦИЯ: ЛАЗЕРНАЯ СЕТКА (3D, БЕСКОНЕЧНОСТЬ)
+        =============================================== */
+        body {
+            background-color: #0a0a0a;
+            font-family: 'Courier New', Courier, monospace;
+            color: #00aaff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Канвас для сетки */
+        #gridCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* ===============================================
+           ОСНОВНОЙ КОНТЕЙНЕР (СИНЯЯ РАМКА)
+        =============================================== */
+        .container {
+            max-width: 700px;
+            width: 100%;
+            border: 4px solid #00aaff; /* СИНЯЯ РАМКА */
+            padding: 40px 30px;
+            background-color: rgba(5, 5, 5, 0.85);
+            box-shadow: 0 0 50px #00aaff, inset 0 0 30px rgba(0, 170, 255, 0.3);
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            backdrop-filter: blur(2px);
+        }
+
+        /* ===============================================
+           ТЕКСТ С ЧЕРНОЙ ОБВОДКОЙ
+        =============================================== */
+        h1, h2, .vice-title, .sub-title, .channel-description, 
+        .subs-counter, .owner, .footer, .tg-link {
+            text-shadow: 
+                -2px -2px 0 #000,  
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000,
+                0 0 15px #00aaff; /* неоновое свечение сверху */
+        }
+
+        .vice-title {
+            font-size: 60px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            line-height: 1;
+            margin-bottom: 20px;
+            color: #00aaff;
+            text-shadow: 
+                -3px -3px 0 #000,
+                3px -3px 0 #000,
+                -3px 3px 0 #000,
+                3px 3px 0 #000,
+                0 0 20px #00aaff;
+            animation: flicker 3s infinite;
+            word-break: break-word;
+        }
+
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 22%, 24%, 55% { opacity: 0.5; }
+        }
+
+        .sub-title {
+            font-size: 22px;
+            color: #00aaff;
+            margin-bottom: 35px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000,
+                0 0 10px #00aaff;
+            border-bottom: 2px dashed #00aaff;
+            padding-bottom: 15px;
+        }
+
+        .channel-description {
+            background-color: #111;
+            border-left: 6px solid #00aaff;
+            border-right: 6px solid #00aaff;
+            padding: 25px;
+            margin: 30px 0;
+            font-size: 22px;
+            line-height: 1.5;
+            color: #f0f0f0;
+            font-style: italic;
+            box-shadow: inset 0 0 30px rgba(0, 170, 255, 0.2);
+            word-break: break-word;
+            text-align: center;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .channel-description span {
+            color: #00aaff;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-shadow: 
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000,
+                0 0 15px #00aaff;
+        }
+
+        .subs-counter {
+            margin: 25px 0 15px;
+            font-size: 28px;
+            border: 2px solid #00aaff;
+            padding: 15px;
+            display: inline-block;
+            background-color: rgba(0, 0, 0, 0.7);
+            min-width: 300px;
+            box-shadow: 0 0 30px #00aaff;
+        }
+
+        .subs-counter span {
+            color: #00aaff;
+            font-weight: 900;
+            font-size: 48px;
+            text-shadow: 
+                -3px -3px 0 #000,
+                3px -3px 0 #000,
+                -3px 3px 0 #000,
+                3px 3px 0 #000,
+                0 0 30px #00aaff;
+            padding: 0 10px;
+        }
+
+        .subs-label {
+            font-size: 16px;
+            color: #ccc;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .link-block {
+            margin: 40px 0 20px;
+        }
+
+        .tg-link {
+            display: inline-block;
+            background: linear-gradient(145deg, #0066aa, #003366);
+            color: #ffffff;
+            font-size: 36px;
+            font-weight: 900;
+            text-decoration: none;
+            padding: 25px 50px;
+            border: 3px solid #00aaff;
+            box-shadow: 0 0 50px #00aaff, 0 0 20px #00aaff, inset 0 0 20px #00aaff;
+            letter-spacing: 4px;
+            transition: 0.2s;
+            text-transform: uppercase;
+            word-break: break-word;
+            animation: pulse 2s infinite;
+            text-shadow: 
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 50px #00aaff; }
+            50% { transform: scale(1.05); box-shadow: 0 0 80px #00aaff, 0 0 30px #00aaff; }
+            100% { transform: scale(1); box-shadow: 0 0 50px #00aaff; }
+        }
+
+        .tg-link:hover {
+            background: linear-gradient(145deg, #00aaff, #0066aa);
+            color: #000;
+            border-color: white;
+            transform: scale(1.1);
+        }
+
+        .owner {
+            margin: 30px 0 20px;
+            font-size: 20px;
+            color: #aaa;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .owner strong {
+            color: #00aaff;
+            font-size: 24px;
+            text-shadow: 
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000,
+                0 0 15px #00aaff;
+        }
+
+        .footer {
+            font-size: 14px;
+            color: #666;
+            margin-top: 30px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .footer span {
+            color: #00aaff;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 15px;
+            height: 25px;
+            background-color: #00aaff;
+            vertical-align: middle;
+            margin-left: 5px;
+            animation: blink 1s infinite;
+            box-shadow: 0 0 15px #00aaff;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .update-time {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+
+        .error-message {
+            color: #ff6666;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Канвас для 3D-сетки -->
+    <canvas id="gridCanvas"></canvas>
+
+    <div class="container">
+        <div class="vice-title">VICE CITY</div>
+        <div class="sub-title">✦ КM КОМЬЮНИТИ ✦</div>
+
+        <div class="channel-description">
+            "Данный ТГК это телеграм будет показывать что нынешнее км телеграм это просто <span>черви ползающие по могилам легендарных людей</span>"
+        </div>
+
+        <!-- БЛОК С ЖИВЫМ СЧЕТЧИКОМ -->
+        <div class="subs-counter">
+            <div class="subs-label">ПОДПИСЧИКОВ В КАНАЛЕ:</div>
+            <span id="subsCount">...</span>
+            <div class="update-time" id="updateTime">обновляется...</div>
+            <div class="error-message" id="errorMsg">⚠️ НЕ УДАЛОСЬ ПОЛУЧИТЬ ДАННЫЕ</div>
+        </div>
+
+        <div class="link-block">
+            <a href="https://t.me/+8Ud9G1dUZl8zNDBk" class="tg-link" target="_blank">
+                ➤ ВОРВАТЬСЯ ➤
+            </a>
+        </div>
+
+        <div class="owner">
+            ✦ ВЛАДЕЛЕЦ: <strong>@cadofi</strong> ✦
+        </div>
+
+        <div style="margin: 15px 0; font-size: 16px; color: #888; word-break: break-all; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;">
+            https://t.me/+8Ud9G1dUZl8zNDBk
+        </div>
+
+        <div class="footer">
+            <span>VICE CITY</span> || СИСТЕМА: I.S.-1 || РЕЖИМ: LIVE
+            <span class="cursor"></span>
+        </div>
+    </div>
+
+    <!-- СКРИПТ ДЛЯ 3D-СЕТКИ -->
+    <script>
+        const canvas = document.getElementById('gridCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let time = 0;
+        
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+        
+        function drawGrid() {
+            ctx.clearRect(0, 0, width, height);
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            const spacing = 40;
+            const lines = 30;
+            const depth = 2000;
+            
+            // Движение сетки
+            const offset = (time * 50) % depth;
+            
+            ctx.strokeStyle = '#00aaff';
+            ctx.lineWidth = 1.5;
+            ctx.shadowColor = '#00aaff';
+            ctx.shadowBlur = 15;
+            
+            // Рисуем горизонтальные линии сетки
+            for (let i = -lines; i <= lines; i++) {
+                const z = (i * spacing + offset) % depth - depth/2;
+                const scale = 500 / (500 + z);
+                
+                if (scale <= 0) continue;
+                
+                const x1 = centerX + (-300) * scale;
+                const y1 = centerY + (z * 0.3) * scale;
+                const x2 = centerX + (300) * scale;
+                const y2 = centerY + (z * 0.3) * scale;
+                
+                // Прозрачность зависит от удаленности
+                const alpha = Math.max(0, 1 - Math.abs(z) / depth * 2);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = `rgba(0, 170, 255, ${alpha * 0.8})`;
+                ctx.stroke();
+            }
+            
+            // Рисуем вертикальные линии сетки
+            for (let i = -lines; i <= lines; i++) {
+                const z = (i * spacing + offset) % depth - depth/2;
+                const scale = 500 / (500 + z);
+                
+                if (scale <= 0) continue;
+                
+                const x1 = centerX + (-200) * scale;
+                const y1 = centerY + (z * 0.3) * scale - 100 * scale;
+                const x2 = centerX + (200) * scale;
+                const y2 = centerY + (z * 0.3) * scale + 100 * scale;
+                
+                const alpha = Math.max(0, 1 - Math.abs(z) / depth * 2);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = `rgba(0, 170, 255, ${alpha * 0.5})`;
+                ctx.stroke();
+            }
+            
+            // Точки на пересечениях (звезды)
+            ctx.shadowBlur = 20;
+            for (let i = -lines; i <= lines; i+=2) {
+                for (let j = -lines; j <= lines; j+=2) {
+                    const z = (i * spacing + offset) % depth - depth/2;
+                    const scale = 500 / (500 + z);
+                    
+                    if (scale <= 0) continue;
+                    
+                    const x = centerX + (j * 15) * scale;
+                    const y = centerY + (z * 0.3) * scale + (i * 5) * scale;
+                    
+                    const alpha = Math.max(0, 1 - Math.abs(z) / depth * 2);
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 2 * scale, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 170, 255, ${alpha})`;
+                    ctx.fill();
+                }
+            }
+            
+            time += 0.01;
+            requestAnimationFrame(drawGrid);
+        }
+        
+        drawGrid();
+    </script>
+
+    <!-- СКРИПТ ДЛЯ ПОЛУЧЕНИЯ ПОДПИСЧИКОВ (ВСТАВЬ СВОИ ДАННЫЕ) -->
+    <script>
+        // ===========================================
+        // ВСТАВЬ СЮДА СВОЙ ТОКЕН БОТА И ID КАНАЛА
+        // ===========================================
+        const CONFIG = {
+            botToken: 'ВСТАВЬ_СЮДА_ТОКЕН_БОТА',
+            channelId: '@vice_city_channel'
+        };
+
+        async function getSubscribersCount() {
+            try {
+                const url = `https://api.telegram.org/bot${CONFIG.botToken}/getChatMembersCount?chat_id=${CONFIG.channelId}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    return data.result;
+                } else {
+                    console.error('Telegram API error:', data);
+                    return null;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                return null;
+            }
+        }
+
+        async function updateCounter() {
+            const subsElement = document.getElementById('subsCount');
+            const timeElement = document.getElementById('updateTime');
+            const errorElement = document.getElementById('errorMsg');
+            
+            subsElement.innerHTML = '⏳';
+            
+            const count = await getSubscribersCount();
+            
+            if (count !== null) {
+                subsElement.innerHTML = count;
+                const now = new Date();
+                timeElement.innerHTML = `обновлено: ${now.toLocaleTimeString()}`;
+                errorElement.style.display = 'none';
+            } else {
+                subsElement.innerHTML = '?';
+                errorElement.style.display = 'block';
+            }
+        }
+
+        updateCounter();
+        setInterval(updateCounter, 60000);
+
+        if (CONFIG.botToken === 'ВСТАВЬ_СЮДА_ТОКЕН_БОТА') {
+            document.getElementById('errorMsg').innerHTML = '⚠️ ВСТАВЬ ТОКЕН БОТА В КОД';
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
